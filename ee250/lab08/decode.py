@@ -9,7 +9,24 @@ SLICE_SIZE = 0.15 #seconds
 WINDOW_SIZE = 0.25 #seconds
 
 # TODO: implement this dictionary
-NUMBER_DIC = {}
+NUMBER_DIC = {
+    697 : {
+        1209 : 1,
+        1336 : 2,
+        1477 : 3,
+    },
+    770 : {
+        1209 : 4,
+        1336 : 5,
+        1477 : 6,
+    },
+    852 : {
+        1209 : 7,
+        1336 : 8,
+        1477 : 9,
+    },
+    941 : 0,
+}
 LOWER_FRQS = [697, 770, 852, 941]
 HIGHER_FRQS = [1209, 1336, 1477]
 FRQ_THRES = 20
@@ -27,15 +44,27 @@ def get_peak_frqs(frq, fft):
     #TODO: implement an algorithm to find the two maximum values in a given array
 
     #get the high and low frequency by splitting it in the middle (1000Hz)
-
+    low_frq = frq[frq < 1000]
+    high_frq = frq[frq >= 1000]
     #spliting the FFT to high and low frequencies
-
+    low_frq_fft = fft[:low_frq.size]
+    high_frq_fft = fft[high_frq.size:]
     return (get_max_frq(low_frq, low_frq_fft), get_max_frq(high_frq, high_frq_fft))
 
 def get_number_from_frq(lower_frq, higher_frq):
     #TODO: given a lower frequency and higher frequency pair
     #      return the corresponding key otherwise return '?' if no match is found
-    return '?'
+    i = (np.abs(LOWER_FRQS - lower_frq)).argmin()
+    low = LOWER_FRQS[i]
+    i = (np.abs(HIGHER_FRQS - higher_frq)).argmin()
+    high = HIGHER_FRQS[i]
+    try:
+        return NUMBER_DIC[low][high]
+    except:
+        try:
+            return NUMBER_DIC[low]
+        except:
+            return '?'
 
 def main(file):
     print("Importing {}".format(file))
@@ -76,12 +105,19 @@ def main(file):
         i += 1
 
         #TODO: grab the sample slice and perform FFT on it
+        sample_slice = samples[start_index: end_index] 
+        sample_slice_fft = np.fft.fft(sample_slice)/n
 
         #TODO: truncate the FFT to 0 to 2000 Hz
+        sample_slice_fft = sample_slice_fft[range(max_frq_idx)]
 
         #TODO: calculate the locations of the upper and lower FFT peak using get_peak_frqs()
+        (low_frq, high_frq) = get_peak_frqs(frq,sample_slice_fft)
 
         #TODO: print the values and find the number that corresponds to the numbers
+        print('low frequency: ' + str(low_frq))
+        print('high frequency ' + str(high_frq))
+        output = output + str(get_number_from_frq(low_frq,high_frq))
 
         #Incrementing the start and end window for FFT analysis
         start_index += int(WINDOW_SIZE*sample_rate)
